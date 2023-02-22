@@ -1063,7 +1063,7 @@ static void arm_v7m_class_init(ObjectClass *oc, void *data)
     cc->tcg_ops = &arm_v7m_tcg_ops;
 #endif /* CONFIG_TCG */
 
-    cc->gdb_core_xml_file = "arm-m-profile.xml";
+    cc->gdb_core_xml_file = "arm-cortex-m.xml";
 }
 
 #ifndef TARGET_AARCH64

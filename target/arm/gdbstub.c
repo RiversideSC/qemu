@@ -20,6 +20,7 @@
 #include "qemu/osdep.h"
 #include "cpu.h"
 #include "exec/gdbstub.h"
+#include "exec/helper-proto.h"
 #include "internals.h"
 #include "cpregs.h"
 
@@ -65,6 +66,33 @@ int arm_cpu_gdb_read_register(CPUState *cs, GByteArray *mem_buf, int n)
         } else {
             return gdb_get_reg32(mem_buf, cpsr_read(env));
         }
+    case 26:
+        /* MSP */
+        return gdb_get_reg32(mem_buf, helper_v7m_mrs(env, 8));
+    case 27:
+        /* PSP */
+        return gdb_get_reg32(mem_buf, helper_v7m_mrs(env, 9));
+    case 28:
+        /* PRIMASK */
+        return gdb_get_reg32(mem_buf, helper_v7m_mrs(env, 16));
+    case 29:
+        /* BASEPRI */
+        return gdb_get_reg32(mem_buf, helper_v7m_mrs(env, 17));
+    case 30:
+        /* FAULTMASK */
+        return gdb_get_reg32(mem_buf, helper_v7m_mrs(env, 19));
+    case 31:
+        /* CONTROL */
+        return gdb_get_reg32(mem_buf, helper_v7m_mrs(env, 20));
+    case 32:
+        /* MSP_NS */
+        return gdb_get_reg32(mem_buf, helper_v7m_mrs(env, 0x88));
+    case 33:
+        /* PSP_NS */
+        return gdb_get_reg32(mem_buf, helper_v7m_mrs(env, 0x89));
+    case 34:
+        /* SP_NS */
+        return gdb_get_reg32(mem_buf, helper_v7m_mrs(env, 0x98));
     }
     /* Unknown register.  */
     return 0;
@@ -125,6 +153,42 @@ int arm_cpu_gdb_write_register(CPUState *cs, uint8_t *mem_buf, int n)
         } else {
             cpsr_write(env, tmp, 0xffffffff, CPSRWriteByGDBStub);
         }
+        return 4;
+    case 26:
+        /* MSP */
+        helper_v7m_msr(env, 8, tmp);
+        return 4;
+    case 27:
+        /* PSP */
+        helper_v7m_msr(env, 9, tmp);
+        return 4;
+    case 28:
+        /* PRIMASK */
+        helper_v7m_msr(env, 16, tmp);
+        return 4;
+    case 29:
+        /* BASEPRI */
+        helper_v7m_msr(env, 17, tmp);
+        return 4;
+    case 30:
+        /* FAULTMASK */
+        helper_v7m_msr(env, 19, tmp);
+        return 4;
+    case 31:
+        /* CONTROL */
+        helper_v7m_msr(env, 20, tmp);
+        return 4;
+    case 32:
+        /* MSP_NS */
+        helper_v7m_msr(env, 0x88, tmp);
+        return 4;
+    case 33:
+        /* PSP_NS */
+        helper_v7m_msr(env, 0x89, tmp);
+        return 4;
+    case 34:
+        /* SP_NS */
+        helper_v7m_msr(env, 0x98, tmp);
         return 4;
     }
     /* Unknown register.  */
