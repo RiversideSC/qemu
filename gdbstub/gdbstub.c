@@ -31,6 +31,11 @@
 #include "qemu/module.h"
 #include "trace.h"
 #include "exec/gdbstub.h"
+#if (defined(TARGET_SUPPORTS_TZM) && TARGET_SUPPORTS_TZM)
+#include "exec/memory.h"
+#include "exec/memattrs.h"
+#include "exec/address-spaces.h"
+#endif
 #ifdef CONFIG_USER_ONLY
 #include "qemu.h"
 #else
@@ -1697,6 +1702,27 @@ static void handle_read_mem(GArray *params, void *user_ctx)
     g_byte_array_set_size(gdbserver_state.mem_buf,
                           get_param(params, 1)->val_ull);
 
+#if (defined(TARGET_SUPPORTS_TZM) && TARGET_SUPPORTS_TZM)
+    AddressSpace *as = gdbserver_state.g_cpu ? gdbserver_state.g_cpu->as : &address_space_memory;
+    hwaddr addr = get_param(params, 0)->val_ull;
+    if(addr & 0x10000000) {
+        MemTxResult r = address_space_read(as, addr, MEMTXATTRS_UNSPECIFIED,
+                                           gdbserver_state.mem_buf->data,
+                                           gdbserver_state.mem_buf->len);
+        if (r != MEMTX_OK) {
+            put_packet("E14");
+            return;
+        }
+    } else {
+        if (target_memory_rw_debug(gdbserver_state.g_cpu,
+                                   get_param(params, 0)->val_ull,
+                                   gdbserver_state.mem_buf->data,
+                                   gdbserver_state.mem_buf->len, false)) {
+            put_packet("E14");
+            return;
+        }
+    }
+#else
     if (target_memory_rw_debug(gdbserver_state.g_cpu,
                                get_param(params, 0)->val_ull,
                                gdbserver_state.mem_buf->data,
@@ -1704,6 +1730,7 @@ static void handle_read_mem(GArray *params, void *user_ctx)
         put_packet("E14");
         return;
     }
+#endif
 
     memtohex(gdbserver_state.str_buf, gdbserver_state.mem_buf->data,
              gdbserver_state.mem_buf->len);
